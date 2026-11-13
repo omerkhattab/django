@@ -1,0 +1,12 @@
+<h1>Members</h1>
+<p>Total members: {{ count }}</p>
+<table>
+  <tr><th>Name</th><th>Duty</th><th>Active</th></tr>
+  {% for member in members %}
+  <tr>
+    <td>{{ member.name }}</td>
+    <td>{{ member.duty }}</td>
+    <td>{{ member.active }}</td>
+  </tr>
+  {% endfor %}
+</table>
