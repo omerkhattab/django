@@ -1,58 +1,39 @@
 
-from pathlib import Path
-from django.conf import settings
 from django.http import HttpResponse, request
-import json
 from django.shortcuts import render
-def load_members():
-    data_file = Path(settings.BASE_DIR).parent / "members.json"
-    with open(data_file, "r", encoding="utf-8") as file:
-        data = json.load(file)
-    return data
+from members.models import Member
+from django.db.models import Count
 def about(request):
     return render (request,"about.html")
 def count(request):
-    data = load_members()       
-    return HttpResponse("<p>Number of members: " + str(len(data)) + "</p>")
+      
+    return HttpResponse("<p>Number of members: " + str(Member.objects.count()) + "</p>")
 
 def hello(request):
     return HttpResponse("Hello omer!")
 def members_page(request):
-    data = load_members()
-    return render(request, "members.html", {"members": data , "count": len(data)})
+    
+    return render(request, "members.html", {"members": Member.objects.all() , "count": Member.objects.count()})
 def first(request):
-    data = load_members()
-    return render(request, "first.html", {"member": data[0]})
+   
+    return render(request, "first.html", {"member": Member.objects.first()})
 def active(request):
-    data = load_members()
-    actives = []
-    for member in data :
-        if member["active"] :
-            actives.append(member)
-    return render(request,"active.html",{"members" : actives , "status":True,"count":len(actives)})
+    actives = Member.objects.filter(active=True)
+    return render(request,"active.html",{"members" : actives ,"count":actives.count()})
 def duties(request):
-    data = load_members()
-    counts = {}
-    for member in data:
-        key = member["duty"]
-        current_count = counts.get(key, 0)
-        counts[key] = current_count + 1
-    return render(request, "duties.html", {"duties": counts})
+    result = Member.objects.values("duty").annotate(total=Count("id")).order_by("duty")
+        
+    return render(request, "duties.html", {"duties": result})
 def member_detail(request, name):
-    data = load_members()
-    member = next((m for m in data if m["name"] == name), None)
+    member = Member.objects.filter(name=name).first()
     if member:
         return render(request, "member_detail.html", {"member": member})
     else:
         return HttpResponse("Member not found", status=404)
 
 def duty_members(request,duty):
-   data = load_members()
-   duty_list = []
-   for member in data :
-      if member["duty"] == duty :
-         duty_list.append(member)
+   duty_list = Member.objects.filter(duty=duty)
    if not duty_list:
       return HttpResponse("duty not found ",status=404)
    else :
-      return render(request,"duty_members.html",{"members":duty_list , "duty":duty ,"count":len(duty_list)})
+      return render(request,"duty_members.html",{"members":duty_list , "duty":duty ,"count":duty_list.count()})
